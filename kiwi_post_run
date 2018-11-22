@@ -1,38 +1,155 @@
-#!/bin/sh -eu
+#!/bin/bash
+set -euo pipefail
 
 : ${TOPDIR:=/usr/src/packages}
+KIWI_NG=$(kiwi --version|grep "next generation")
 
-TARGET_DIR=$TOPDIR/KIWI-vmx/
-RPM_SOURCE_DIR=$TOPDIR/SOURCES
-FILES_DIR=/usr/lib/build
+echo "Running containment-rpm-kata..."
 
-cd $TARGET_DIR
+IMAGE_DIR=$TOPDIR/KIWI
+BUILD_DIR=/usr/lib/build
+BUILD_DISTURL=
 
-STEM=Containment-Studio
-EXT=.qcow2
-SOURCE=$(echo $STEM-*$EXT)
+# To get BUILD_DISTURL
+test -f /.buildenv && . /.buildenv
 
-# extract os/platform, version, release from the source tarball
-set -- $(echo $SOURCE | sed -r "s/(.*)-(.*)$EXT/\1 \2/")
-NAME=$(echo $1 | sed -r "s/.x86_64//g")
-VERSION=$2
-RELEASE=$(date +%Y%m%d%H%M%S)
+cd $IMAGE_DIR
 
-echo "name $NAME"
-echo "version $VERSION"
-echo "release $RELEASE"
+# Setting default for SPEC_IN
+SPEC_IN=$BUILD_DIR/image.spec.in
 
-sed -e "s/__NAME__/$NAME/g" \
+# Overwrite default for SPEC_IN if _image.spec.in
+# exists in sources dir
+if [ -f $TOPDIR/SOURCES/_image.spec.in ];then
+    SPEC_IN=$TOPDIR/SOURCES/_image.spec.in
+fi
+
+echo "Using $SPEC_IN as spec file template"
+
+echo "Generate metadata for spec file template"
+
+ARCH="$(uname -m)"
+
+# Parse KIWI config.xml to get kata images details
+PKG_NAME=$( xmllint --xpath "string(//image/@name)" \
+                    $TOPDIR/KIWIROOT-ext4/image/config.xml )
+PKG_VERSION=$( xmllint --xpath "string(//image/preferences/version)" \
+                    $TOPDIR/KIWIROOT-ext4/image/config.xml )
+PKG_DESCRIPTION=$( xmllint --xpath "string(//image/description/specification)" \
+                    $TOPDIR/KIWIROOT-ext4/image/config.xml )
+
+# Get path for python based kiwi
+PREFIX="${PKG_NAME}.${ARCH}-${PKG_VERSION}"
+SUFFIX=".xz"
+if [ -n "$KIWI_NG" ]; then
+    SUFFIX=".ext4${SUFFIX}"
+fi
+
+shopt -s nullglob
+shopt -s extglob
+
+IMAGE=$(echo ${PREFIX}*${SUFFIX})
+PACKAGES=$(echo ${PREFIX}*.packages)
+
+if [ -z "$IMAGE" ]; then
+    echo "Couldn't find anything in "`pwd`" matching ${PREFIX}*${SUFFIX}."
+    echo "Content of directory: "
+    echo "`ls -1`"
+    echo "Will skip containment rpm wrapping steps."
+    exit 0
+fi
+
+echo "Attempting to wrap $IMAGE in a containment rpm ..."
+
+VERSION="${PKG_VERSION}"
+RELEASE=$(echo "$PACKAGES" | sed 's/.*-Build\(.*\).packages/\1/')
+
+if [ -z "$RELEASE" ]; then
+    echo "Could not parse release number, setting it to zero"
+    RELEASE=0
+fi
+
+# Check if VERSION was defined properly and validate it
+# VERSION for RPM package has to be decimal number separete with dots
+if ! [[ $VERSION =~ ^([0-9]+\.){0,2}(\*|[0-9]+)$ ]]; then
+    echo "Local build detected or wrong version format"
+    # Just arbitrarily assign the version since we have nothing else
+    # to go on.
+    VERSION="1.0.0"
+fi
+
+echo "Name:        $PKG_NAME"
+echo "Version:     $VERSION"
+echo "Description: $PKG_DESCRIPTION"
+echo "Release:     $RELEASE"
+echo "Source:      $IMAGE"
+
+sed -e "s/__NAME__/$PKG_NAME/g" \
     -e "s/__VERSION__/$VERSION/g" \
+    -e "s/__DESCRIPTION__/$PKG_DESCRIPTION/g" \
     -e "s/__RELEASE__/$RELEASE/g" \
-    -e "s/__SOURCE__/$SOURCE/g" \
-    < $FILES_DIR/image.spec.in \
-    > $FILES_DIR/image.spec
+    -e "s/__SOURCE0__/$IMAGE/g" \
+    < $SPEC_IN \
+    > $BUILD_DIR/image.spec
 
-tar -cjf $RPM_SOURCE_DIR/$NAME-$VERSION-$RELEASE-vmx.tar.bz2 $SOURCE
-rpmbuild -ba $FILES_DIR/image.spec
+touch $BUILD_DIR/image.changes
+
+echo "Generating changelog for $PKG_NAME $ARCH"
+
+CHANGELOG_FILENAME=/usr/share/changelog-generator-data/old.changes.$PKG_NAME.$ARCH
+PACKAGES_FILENAME=/usr/share/changelog-generator-data/old.packages.$PKG_NAME.$ARCH
+
+if [ -e $PACKAGES_FILENAME ];then
+    if [ -e $CHANGELOG_FILENAME ];then
+        if ! type changelog-generator &>/dev/null;then
+            echo "Fatal: changelog found but 'changelog-generator' not installed!"
+            exit 1
+        fi
+
+        changelog-generator --new-packages $PACKAGES \
+          --old-packages $PACKAGES_FILENAME \
+          --changelog $CHANGELOG_FILENAME > $BUILD_DIR/image.changes
+    else
+        echo "no $PACKAGES_FILENAME"
+    fi
+else
+    echo "no $CHANGELOG_FILENAME"
+fi
+
+cat $BUILD_DIR/image.changes >> $BUILD_DIR/image.spec
+mv $BUILD_DIR/image.changes $IMAGE_DIR
+
+# Local builds have the file already in place, that's not true on IBS
+if [ ! -f $TOPDIR/SOURCES/$IMAGE ]; then
+  ln $IMAGE $TOPDIR/SOURCES
+fi
+
+# Make sure /usr/src/packages/* dirs exist
+if [ ! -f $TOPDIR/BUILD ]; then
+  echo "Create BUILD dir"
+  mkdir -p $TOPDIR/BUILD
+fi
+
+if [ ! -f $TOPDIR/SRPMS ]; then
+  echo "Create SRPMS dir"
+  mkdir -p $TOPDIR/SRPMS
+fi
+
+if [ ! -f $TOPDIR/RPMS/$ARCH ]; then
+  echo "Create SRPMS dir"
+  mkdir -p $TOPDIR/RPMS/$ARCH
+fi
+
+if [ -z "$BUILD_DISTURL" ]; then
+  rpmbuild --target $ARCH -ba $BUILD_DIR/image.spec
+else
+  rpmbuild --target $ARCH -ba --define "disturl $BUILD_DISTURL" $BUILD_DIR/image.spec
+fi
 
 # required for the BS to find the rpm, because it is
 # a "non-standard result file for KIWI"
 mkdir -p $TOPDIR/OTHER
-mv $TOPDIR/RPMS/noarch/$NAME-$VERSION-$RELEASE.noarch.rpm $TOPDIR/OTHER/
+mv $TOPDIR/RPMS/$ARCH/$PKG_NAME-$VERSION-$RELEASE.$ARCH.rpm $TOPDIR/OTHER/
+mv $TOPDIR/SRPMS/$PKG_NAME-$VERSION-$RELEASE.src.rpm $TOPDIR/OTHER/
+
+echo "containment-rpm-kata completed!"
