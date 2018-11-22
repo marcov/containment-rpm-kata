@@ -1,6 +1,7 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # vim: fdm=marker cms=\ #\ %s
 
+set -euo pipefail
 set -o errexit
 set -o nounset
 set -o posix
@@ -15,8 +16,8 @@ if test $# -lt 1; then
   usage 1
 fi
 
-project=Devel:StudioOnline:containment_common_packages
-bsapiurl=https://api.suse.de/
+project=home:mvedovati:katacontainers:images
+bsapiurl=https://api.opensuse.org/
 
 while getopts hp: optname; do
   case $optname in
@@ -28,8 +29,8 @@ while getopts hp: optname; do
 done
 shift $(($OPTIND - 1))
 
-package=containment-rpm
-dloadurl=https://github.com/openSUSE/$package
+package=containment-rpm-kata
+dloadurl=https://github.com/marcov/$package
 pkgdir=$project/$package
 specfile=$package.spec
 tag=$1
@@ -45,7 +46,7 @@ fetch() # {{{
 {
   set -eu
   local tag=${1?}
-  wget -qO $tarball $dloadurl/tarball/$tag
+  curl -sSL -o $tarball $dloadurl/archive/$tag.tar.gz
 } # }}}
 repack() # {{{
 {
@@ -95,15 +96,17 @@ update_tarball() # {{{
 } # }}}
 exithook() # {{{
 {
+  [ "$?" != "0" ] && echo "Trapped an error...exiting!"
   set -eu
   rm -rf $root
 } # }}}
 
 trap exithook EXIT
 root=$(mktemp -d)
-echo "$0: root=$root"
+echo "Running $(basename $0) in root: $root"
 cd $root
 osc co $pkgdir
+echo "Fetching tarball for tag $tag from $dloadurl"
 fetch $tag
 repack $tarball
 update $tarball
@@ -111,4 +114,5 @@ cd $pkgdir
 extract $tarball $specfile.in
 update $specfile $version
 #osc build
+echo "Pusing to OBS..."
 osc ci
