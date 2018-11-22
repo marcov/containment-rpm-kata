@@ -6,6 +6,7 @@ KIWI_NG=$(kiwi --version|grep "next generation")
 
 echo "Running containment-rpm-kata..."
 
+IMAGE_TYPE="tbz"
 IMAGE_DIR=$TOPDIR/KIWI
 BUILD_DIR=/usr/lib/build
 BUILD_DISTURL=
@@ -32,18 +33,15 @@ ARCH="$(uname -m)"
 
 # Parse KIWI config.xml to get kata images details
 PKG_NAME=$( xmllint --xpath "string(//image/@name)" \
-                    $TOPDIR/KIWIROOT-ext4/image/config.xml )
+                    $TOPDIR/KIWIROOT-${IMAGE_TYPE}/image/config.xml )
 PKG_VERSION=$( xmllint --xpath "string(//image/preferences/version)" \
-                    $TOPDIR/KIWIROOT-ext4/image/config.xml )
+                    $TOPDIR/KIWIROOT-${IMAGE_TYPE}/image/config.xml )
 PKG_DESCRIPTION=$( xmllint --xpath "string(//image/description/specification)" \
-                    $TOPDIR/KIWIROOT-ext4/image/config.xml )
+                    $TOPDIR/KIWIROOT-${IMAGE_TYPE}/image/config.xml )
 
 # Get path for python based kiwi
 PREFIX="${PKG_NAME}.${ARCH}-${PKG_VERSION}"
-SUFFIX=".xz"
-if [ -n "$KIWI_NG" ]; then
-    SUFFIX=".ext4${SUFFIX}"
-fi
+SUFFIX=".${IMAGE_TYPE}${SUFFIX}"
 
 shopt -s nullglob
 shopt -s extglob
