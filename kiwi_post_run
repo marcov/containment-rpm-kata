@@ -7,6 +7,7 @@ KIWI_NG=$(kiwi --version|grep "next generation")
 echo "Running containment-rpm-kata..."
 
 IMAGE_TYPE="tbz"
+IMAGE_SUFFIX=".tar.xz"
 IMAGE_DIR=$TOPDIR/KIWI
 BUILD_DIR=/usr/lib/build
 BUILD_DISTURL=
@@ -41,16 +42,15 @@ PKG_DESCRIPTION=$( xmllint --xpath "string(//image/description/specification)" \
 
 # Get path for python based kiwi
 PREFIX="${PKG_NAME}.${ARCH}-${PKG_VERSION}"
-SUFFIX=".${IMAGE_TYPE}${SUFFIX}"
 
 shopt -s nullglob
 shopt -s extglob
 
-IMAGE=$(echo ${PREFIX}*${SUFFIX})
+IMAGE=$(echo ${PREFIX}*${IMAGE_SUFFIX})
 PACKAGES=$(echo ${PREFIX}*.packages)
 
 if [ -z "$IMAGE" ]; then
-    echo "Couldn't find anything in "`pwd`" matching ${PREFIX}*${SUFFIX}."
+    echo "Couldn't find anything in "`pwd`" matching ${PREFIX}*${IMAGE_SUFFIX}."
     echo "Content of directory: "
     echo "`ls -1`"
     echo "Will skip containment rpm wrapping steps."
