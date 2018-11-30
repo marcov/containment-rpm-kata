@@ -2,6 +2,11 @@
                       openSUSE/containment-rpm
 =====================================================================
 
+update-package usage:
+
+./update-package -p "obs:target:project:for:containment:pkg" git_tag_to_fetch
+
+
 `openSUSE/containment-rpm`_ is the authoritative source for
 `Devel:StudioOnline:containment_common_packages/containment-rpm`_.
 ``image.spec.in``, ``kiwi_post_run`` and ``containment-rpm.spec.in`` are

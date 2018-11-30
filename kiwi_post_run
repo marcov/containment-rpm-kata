@@ -2,7 +2,6 @@
 set -euo pipefail
 
 : ${TOPDIR:=/usr/src/packages}
-KIWI_NG=$(kiwi --version|grep "next generation")
 
 echo "Running containment-rpm-kata..."
 
@@ -56,6 +55,15 @@ if [ -z "$IMAGE" ]; then
     echo "Will skip containment rpm wrapping steps."
     exit 0
 fi
+
+echo "Building a kata compatible image from $IMAGE"
+mkdir kata-rootfs
+tar -xf ${IMAGE} --strip-components=1 -C kata-rootfs
+IMAGE="${IMAGE%${IMAGE_SUFFIX}}.img"
+$(BUILD_DIR)/build_kata_image.sh "kata-rootfs" "${IMAGE}"
+rm -rf kata-rootfs
+
+###############################################################################
 
 echo "Attempting to wrap $IMAGE in a containment rpm ..."
 

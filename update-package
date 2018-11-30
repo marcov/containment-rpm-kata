@@ -6,18 +6,25 @@ set -o errexit
 set -o nounset
 set -o posix
 
+project=home:mvedovati:katacontainers:images
+bsapiurl=https://api.opensuse.org/
+
 usage() # {{{
 {
-  printf "Usage: $0 {-h|[-p <project>] <tag>}\n" >&2
+  printf "Usage: $0 {-h| [-A <BS URL>] [-p <BS project>] <git tag>}\n" >&2
+cat << EOF
+
+Generate package sources for ${package}.
+This tool fetches the package source from git at the specified tag,
+generates the spec file and changelog from the template files, and
+finally it commits all to the specified OBS project"
+EOF
   exit $1
 } # }}}
 
 if test $# -lt 1; then
   usage 1
 fi
-
-project=home:mvedovati:katacontainers:images
-bsapiurl=https://api.opensuse.org/
 
 while getopts hp: optname; do
   case $optname in
@@ -29,13 +36,18 @@ while getopts hp: optname; do
 done
 shift $(($OPTIND - 1))
 
+tag=$1
 package=containment-rpm-kata
-dloadurl=https://github.com/marcov/$package
+pkgUrl=https://github.com/marcov/${package}/archive/${tag}.tar.gz
 pkgdir=$project/$package
 specfile=$package.spec
-tag=$1
 version=${tag#v}
 tarball=$package-$version.tar.gz
+
+osbuilderTag=osbuilder-install
+osbuilderUrl=https://github.com/marcov/kata-osbuilder/archive/${osbuilderTag}.tar.gz
+osbuilderTarball=osbuilder.tar.gz
+
 
 osc() # {{{
 {
@@ -45,16 +57,32 @@ osc() # {{{
 fetch() # {{{
 {
   set -eu
-  local tag=${1?}
-  curl -sSL -o $tarball $dloadurl/archive/$tag.tar.gz
+  local url=${1?}
+  local outname=${2?}
+  echo "Fetching ${outname} from $url"
+  curl -sSL -o $outname "$url"
 } # }}}
-repack() # {{{
+
+install_osbuilder() {
+  set -eu
+  local installDir=${1?}
+
+  echo "Installing osbuilder..."
+  mkdir osbuilder-tmp
+  tar -xzf $osbuilderTarball --strip-components=1 -C osbuilder-tmp
+  make -C osbuilder-tmp install-scripts  INSTALL_DIR=${installDir}
+  rm -rf osbuilder-tmp $osbuilderTarball
+}
+repack_with_osbuilder() # {{{
 {
   set -eu
   local tarball=${1?}
   local dir=${tarball%.tar.gz}
   mkdir $dir
   tar -xzf $tarball --strip-components=1 -C $dir
+
+  install_osbuilder "$(pwd)/$dir/osbuilder"
+
   tar -czf $tarball $dir
   rm -rf $dir
 } # }}}
@@ -106,9 +134,11 @@ root=$(mktemp -d)
 echo "Running $(basename $0) in root: $root"
 cd $root
 osc co $pkgdir
-echo "Fetching tarball for tag $tag from $dloadurl"
-fetch $tag
-repack $tarball
+fetch "$pkgUrl" $tarball
+fetch "$osbuilderUrl" "$osbuilderTarball"
+echo "Repacking tarball"
+repack_with_osbuilder $tarball
+echo "Updating tarball"
 update $tarball
 cd $pkgdir
 extract $tarball $specfile.in

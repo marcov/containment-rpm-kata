@@ -57,6 +57,9 @@ becomes an additional build artefact.
 mkdir -p %{buildroot}/usr/lib/build/
 install -m 644 image.spec.in %{buildroot}/usr/lib/build/
 install -m 755 kiwi_post_run %{buildroot}/usr/lib/build/
+install -m 755 osbuilder/image-builder/image_builder.sh %{buildroot}/usr/lib/build/osbuilder/image-builder/
+install -m 755 osbuilder/scripts/lib.sh %{buildroot}/usr/lib/build/osbuilder/scripts/
+
 
 %files
 %defattr(-,root,root)
