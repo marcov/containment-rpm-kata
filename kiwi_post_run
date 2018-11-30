@@ -57,11 +57,13 @@ if [ -z "$IMAGE" ]; then
 fi
 
 echo "Building a kata compatible image from $IMAGE"
-mkdir kata-rootfs
-tar -xf ${IMAGE} --strip-components=1 -C kata-rootfs
+#rootfsDir=kata-rootfs
+#mkdir "${rootfsDir}"
+#tar -xf ${IMAGE} -C "${rootfsDir}"
+rootfsDir="/usr/src/packages/KIWIROOT-${IMAGE_TYPE}"
 IMAGE="${IMAGE%${IMAGE_SUFFIX}}.img"
-$(BUILD_DIR)/build_kata_image.sh "kata-rootfs" "${IMAGE}"
-rm -rf kata-rootfs
+${BUILD_DIR}/build_kata_img.sh "${rootfsDir}" "${IMAGE}"
+#rm -rf "${rootfsDir}"
 
 ###############################################################################
 
