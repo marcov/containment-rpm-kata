@@ -44,8 +44,8 @@ specfile=$package.spec
 version=${tag#v}
 tarball=$package-$version.tar.gz
 
-osbuilderTag=osbuilder-install
-osbuilderUrl=https://github.com/marcov/kata-osbuilder/archive/${osbuilderTag}.tar.gz
+osbuilderTag=master
+osbuilderUrl=https://github.com/kata-containers/osbuilder/archive/${osbuilderTag}.tar.gz
 osbuilderTarball=osbuilder.tar.gz
 
 
