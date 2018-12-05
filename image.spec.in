@@ -9,6 +9,7 @@ Group:          System/Management
 License:        SUSE-EULA
 Source0:        __SOURCE0__
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+Provides:       katacontainers-image
 
 %description
 This package contains the __DESCRIPTION__.
