@@ -21,6 +21,7 @@ This package contains the __DESCRIPTION__.
 %install
 install -d -m 755 $RPM_BUILD_ROOT%{_datadir}/kata-containers/images
 install -p -D -m 644 %{SOURCE0} $RPM_BUILD_ROOT%{_datadir}/kata-containers/images
+ln -s %{_datadir}/kata-containers/images/$(basename %{SOURCE0}) $RPM_BUILD_ROOT%{_datadir}/kata-containers/kata-containers.img
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -28,6 +29,8 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-, root, root)
 %dir %{_datadir}/kata-containers
-%{_datadir}/kata-containers/images
+%{_datadir}/kata-containers/kata-containers.img
+%dir %{_datadir}/kata-containers/images
+%{_datadir}/kata-containers/images/$(basename %{SOURCE0})
 
 %changelog
