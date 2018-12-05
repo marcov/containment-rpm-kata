@@ -6,7 +6,7 @@ Summary:        Package with __DESCRIPTION__
 Version:        __VERSION__
 Release:        __RELEASE__
 Group:          System/Management
-License:        SUSE-EULA
+License:        Apache-2.0
 Source0:        __SOURCE0__
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Provides:       katacontainers-image
@@ -31,6 +31,6 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_datadir}/kata-containers
 %{_datadir}/kata-containers/kata-containers.img
 %dir %{_datadir}/kata-containers/images
-%{_datadir}/kata-containers/images/$(basename %{SOURCE0})
+%{_datadir}/kata-containers/images/%{name}*
 
 %changelog
