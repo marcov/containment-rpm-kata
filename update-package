@@ -86,6 +86,17 @@ repack_with_osbuilder() # {{{
   tar -czf $tarball $dir
   rm -rf $dir
 } # }}}
+repack_tarball() # {{{
+{
+  set -eu
+  local tarball=${1?}
+  local dir=${tarball%.tar.gz}
+  mkdir $dir
+  tar -xzf $tarball --strip-components=1 -C $dir
+
+  tar -czf $tarball $dir
+  rm -rf $dir
+} # }}}
 extract() # {{{
 {
   set -eu
@@ -137,7 +148,7 @@ osc co $pkgdir
 fetch "$pkgUrl" $tarball
 fetch "$osbuilderUrl" "$osbuilderTarball"
 echo "Repacking tarball"
-repack_with_osbuilder $tarball
+repack_tarball $tarball
 echo "Updating tarball"
 update $tarball
 cd $pkgdir

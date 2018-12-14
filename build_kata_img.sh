@@ -13,5 +13,5 @@ echo "Will create some new image from $img in $rootfsDir"
 # Create /lib/systemd/systemd if it does not exist
 [ -e "${rootfsDir}/lib/systemd/systemd" ] || (mkdir -p ${rootfsDir}/lib/systemd/; ln -s /usr/lib/systemd/systemd ${rootfsDir}/lib/systemd/systemd)
 
-${script_dir}/osbuilder/image-builder/image_builder.sh -o "$img" "$rootfsDir"
+${script_dir}/kata-osbuilder/image-builder/image_builder.sh -o "$img" "$rootfsDir"
 
