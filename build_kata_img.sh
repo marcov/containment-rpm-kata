@@ -1,15 +1,13 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-source ${script_dir}/kata-osbuilder/scripts/lib.sh
-
 readonly rootfsDir="$1"
 readonly targetImg="$2"
 readonly script_dir="$(dirname $(readlink -f $0))"
 
-echo "Creating kata image $targetImg from $rootfsDir"
+source ${script_dir}/kata-osbuilder/scripts/lib.sh
 
-info "Creating summary file"
+echo "Creating kata image $targetImg from $rootfsDir"
 create_summary_file "$rootfsDir"
 
 # Create /sbin/init if it does not exist
