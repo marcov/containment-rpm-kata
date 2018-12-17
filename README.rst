@@ -2,10 +2,17 @@
                       openSUSE/containment-rpm
 =====================================================================
 
-update-package usage:
+How to deploy a new version:
+1. Commit and push changes to the upstream Git repository.
+2. Run update-package:
 
-./update-package -p "obs:target:project:for:containment:pkg" git_tag_to_fetch
+./update-package -p OBS_PROJECT GIT_REVISION
 
+OBS_PROJECT:  The name of the OBS project hosting the containment package.
+GIT_REVISION: The Git tag / branch of the upstream repository, used to
+update the OBS project.
+
+=====================================================================
 
 `openSUSE/containment-rpm`_ is the authoritative source for
 `Devel:StudioOnline:containment_common_packages/containment-rpm`_.
