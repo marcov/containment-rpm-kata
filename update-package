@@ -11,11 +11,11 @@ bsapiurl=https://api.opensuse.org/
 
 usage() # {{{
 {
-  printf "Usage: $0 {-h| [-A <BS URL>] [-p <BS project>] <git tag>}\n" >&2
+  printf "Usage: $0 {-h| [-A <BS URL>] [-p <BS project>] <git rev/tag>}\n" >&2
 cat << EOF
 
 Generate package sources for ${package}.
-This tool fetches the package source from git at the specified tag,
+This tool fetches the package source from git at the specified revision or tag,
 generates the spec file and changelog from the template files, and
 finally it commits all to the specified OBS project"
 EOF
@@ -139,6 +139,12 @@ exithook() # {{{
   set -eu
   rm -rf $root
 } # }}}
+
+#detect local changes
+if [ -n "$(git status -s)" ] || [ -n "$(git log  --oneline origin/${tag}..HEAD)" ]; then
+	echo "Detected untracked changes or unpushed commits."
+	exit 1
+fi
 
 trap exithook EXIT
 root=$(mktemp -d)
