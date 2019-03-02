@@ -45,10 +45,10 @@ PREFIX="${PKG_NAME}.${ARCH}-${PKG_VERSION}"
 shopt -s nullglob
 shopt -s extglob
 
-IMAGE=$(echo ${PREFIX}*${IMAGE_SUFFIX})
 PACKAGES=$(echo ${PREFIX}*.packages)
+IMAGE_COMPRESSED=$(echo ${PREFIX}*${IMAGE_SUFFIX})
 
-if [ -z "$IMAGE" ]; then
+if [ -z "$IMAGE_COMPRESSED" ]; then
     echo "Couldn't find anything in "`pwd`" matching ${PREFIX}*${IMAGE_SUFFIX}."
     echo "Content of directory: "
     echo "`ls -1`"
@@ -56,13 +56,15 @@ if [ -z "$IMAGE" ]; then
     exit 0
 fi
 
-echo "Building a kata compatible image from $IMAGE"
+echo "Building a Kata compatible image from $IMAGE_COMPRESSED"
 #rootfsDir=kata-rootfs
 #mkdir "${rootfsDir}"
-#tar -xf ${IMAGE} -C "${rootfsDir}"
+#tar -xf ${IMAGE_COMPRESSED} -C "${rootfsDir}"
 rootfsDir="/usr/src/packages/KIWIROOT-${IMAGE_TYPE}"
-IMAGE="${IMAGE%${IMAGE_SUFFIX}}.img"
+
+IMAGE="${IMAGE_COMPRESSED%${IMAGE_SUFFIX}}.img"
 ${BUILD_DIR}/build_kata_img.sh "${rootfsDir}" "${IMAGE}"
+
 #rm -rf "${rootfsDir}"
 
 ###############################################################################
@@ -160,4 +162,6 @@ mkdir -p $TOPDIR/OTHER
 mv $TOPDIR/RPMS/$ARCH/$PKG_NAME-$VERSION-$RELEASE.$ARCH.rpm $TOPDIR/OTHER/
 mv $TOPDIR/SRPMS/$PKG_NAME-$VERSION-$RELEASE.src.rpm $TOPDIR/OTHER/
 
-echo "containment-rpm-kata completed!"
+rm "$IMAGE_COMPRESSED" "$IMAGE" "$IMAGE_COMPRESSED.sha256" "${IMAGE%img}.{packages,report}"
+
+echo "containment-rpm-kata completed successfully"
