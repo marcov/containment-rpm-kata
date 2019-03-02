@@ -79,7 +79,7 @@ fi
 
 # Check if VERSION was defined properly and validate it
 # VERSION for RPM package has to be decimal number separete with dots
-if ! [[ $VERSION =~ ^([0-9]+\.){0,2}(\*|[0-9]+)[-~+] ]]; then
+if ! [[ $VERSION =~ ^([0-9]+\.){0,2}(\*|[0-9]+)[?-~+] ]]; then
     echo "ERROR: local build or wrong version format detected: $VERSION"
     # Just arbitrarily assign the version since we have nothing else
     # to go on.
