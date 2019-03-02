@@ -44,6 +44,7 @@ specfile=$package.spec
 version=${tag#v}
 tarball=$package-$version.tar.gz
 
+addOsbuilder=
 osbuilderTag=master
 osbuilderUrl=https://github.com/kata-containers/osbuilder/archive/${osbuilderTag}.tar.gz
 osbuilderTarball=osbuilder.tar.gz
@@ -152,9 +153,17 @@ echo "Running $(basename $0) in root: $root"
 cd $root
 osc co $pkgdir
 fetch "$pkgUrl" $tarball
-fetch "$osbuilderUrl" "$osbuilderTarball"
-echo "Repacking tarball"
-repack_tarball $tarball
+
+if [ -n "$addOsbuilder" ]; then
+    fetch "$osbuilderUrl" "$osbuilderTarball"
+
+    echo "Repacking tarball with osbuilder"
+    repack_with_osbuilder $tarball
+else
+    echo "Repacking tarball"
+    repack_tarball $tarball
+fi
+
 echo "Updating tarball"
 update $tarball
 cd $pkgdir
