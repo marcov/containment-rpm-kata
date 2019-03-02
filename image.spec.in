@@ -2,14 +2,14 @@
 
 Url:            http://www.suse.com/
 Name:           __NAME__
-Summary:        Package with __DESCRIPTION__ 
+Summary:        Package with __DESCRIPTION__
 Version:        __VERSION__
 Release:        __RELEASE__
 Group:          System/Management
 License:        Apache-2.0
 Source0:        __SOURCE0__
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-Provides:       katacontainers-image
+Provides:       katacontainers-image = __VERSION__
 
 %description
 This package contains the __DESCRIPTION__.
