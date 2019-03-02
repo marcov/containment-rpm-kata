@@ -162,6 +162,10 @@ mkdir -p $TOPDIR/OTHER
 mv $TOPDIR/RPMS/$ARCH/$PKG_NAME-$VERSION-$RELEASE.$ARCH.rpm $TOPDIR/OTHER/
 mv $TOPDIR/SRPMS/$PKG_NAME-$VERSION-$RELEASE.src.rpm $TOPDIR/OTHER/
 
-rm "$IMAGE_COMPRESSED" "$IMAGE" "$IMAGE_COMPRESSED.sha256" "${IMAGE%img}.{packages,report}"
+rm \
+	"$IMAGE_COMPRESSED" \
+	"$IMAGE" \
+	"$IMAGE_COMPRESSED.sha256" \
+	"${IMAGE%.img}.packages"
 
 echo "containment-rpm-kata completed successfully"
